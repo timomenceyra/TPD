@@ -7,6 +7,16 @@
  */
 int init_client(ClientState *state, const char *server_ip, 
                 const char *credentials, const char *filename) {
+    // Validar credenciales ANTES de inicializar
+    if (!validate_credentials(credentials)) {
+        return -1;
+    }
+    
+    // Validar filename ANTES de inicializar
+    if (!validate_filename(filename)) {
+        return -1;
+    }
+    
     // Crear socket
     state->sockfd = create_udp_socket();
     if (state->sockfd < 0) {
@@ -34,6 +44,7 @@ int init_client(ClientState *state, const char *server_ip,
     
     printf("Cliente inicializado\n");
     printf("  Servidor: %s:%d\n", server_ip, SERVER_PORT);
+    printf("  Credenciales: %s\n", credentials);
     printf("  Archivo: %s\n", filename);
     
     return 0;
@@ -107,11 +118,6 @@ int send_wrq(ClientState *state) {
     int filename_len = strlen(state->filename) + 1; // +1 por null terminator
     
     printf("\n=== FASE 2: PARAMETRIZACION (WRQ) ===\n");
-    
-    // Validar filename
-    if (!validate_filename(state->filename)) {
-        return -1;
-    }
     
     // Construir WRQ PDU con seq_num = 1
     build_pdu(&pdu, TYPE_WRQ, 1, state->filename, filename_len);
@@ -269,27 +275,29 @@ int send_file_data(ClientState *state, const char *filepath) {
 
 /**
  * FASE 4: Finalización (FIN)
+ * CORREGIDO: Según aclaración del profesor, el payload debe estar VACÍO
  */
 int send_fin(ClientState *state) {
     PDU pdu, ack;
     int retries = 0;
-    int filename_len = strlen(state->filename) + 1;
     
     printf("\n=== FASE 4: FINALIZACION (FIN) ===\n");
     
-    // Construir FIN PDU con seq_num actual
-    build_pdu(&pdu, TYPE_FIN, state->current_seq, state->filename, filename_len);
+    // CORREGIDO: Construir FIN PDU con payload VACÍO (no filename)
+    // Según aclaración del profesor: "En la fase 4 de Finalización, el payload es vacío"
+    build_pdu(&pdu, TYPE_FIN, state->current_seq, NULL, 0);
     
     while (retries < MAX_RETRIES) {
-        printf("Enviando FIN (intento %d/%d)...\n", retries + 1, MAX_RETRIES);
+        printf("Enviando FIN con seq=%d (intento %d/%d)...\n", 
+               state->current_seq, retries + 1, MAX_RETRIES);
         
-        // Enviar FIN
-        int sent = send_pdu(state->sockfd, &state->server_addr, &pdu, filename_len);
+        // Enviar FIN con payload vacío (data_len = 0)
+        int sent = send_pdu(state->sockfd, &state->server_addr, &pdu, 0);
         if (sent < 0) {
             return -1;
         }
         
-        print_pdu(&pdu, filename_len, "  TX:");
+        print_pdu(&pdu, 0, "  TX:");
         
         // Esperar ACK
         struct sockaddr_in from_addr;
@@ -325,21 +333,21 @@ int main(int argc, char *argv[]) {
     
     // Verificar argumentos
     if (argc != 5) {
-        printf("Uso: %s <server_ip> <credentials> <filename> <filepath>\n", argv[0]);
-        printf("Ejemplo: %s 127.0.0.1 mi_credencial test.bin ./test_files/archivo.bin\n", argv[0]);
+        printf("Uso: %s <server_ip> <credentials> <filepath> <filename>\n", argv[0]);
+        printf("Ejemplo: %s 127.0.0.1 g14-978e ./test_files/archivo_20kB testfile\n", argv[0]);
         return 1;
     }
     
     const char *server_ip = argv[1];
     const char *credentials = argv[2];
-    const char *filename = argv[3];
-    const char *filepath = argv[4];
+    const char *filepath = argv[3];    // CAMBIADO: ahora filepath va primero
+    const char *filename = argv[4];    // CAMBIADO: filename va último
     
     printf("========================================\n");
     printf("  CLIENTE UDP FILE TRANSFER\n");
     printf("========================================\n");
     
-    // Inicializar cliente
+    // Inicializar cliente (ya valida credenciales y filename)
     if (init_client(&state, server_ip, credentials, filename) < 0) {
         return 1;
     }

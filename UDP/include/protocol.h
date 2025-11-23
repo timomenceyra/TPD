@@ -20,14 +20,17 @@
 #define SERVER_PORT 20252
 
 // Tamaños
-#define MAX_DATA_SIZE 1478          // Tamaño máximo recomendado de datos
-#define MAX_PDU_SIZE 1480           // Type(1) + SeqNum(1) + Data(1478)
+// CORREGIDO: 1470 = 1500 (Ethernet MTU) - 20 (IP header) - 8 (UDP header) - 2 (Type + SeqNum)
+#define MAX_DATA_SIZE 1470          // Tamaño máximo de datos según aclaración del profesor
+#define MAX_PDU_SIZE 1472           // Type(1) + SeqNum(1) + Data(1470)
 #define MAX_CREDENTIALS_SIZE 256
+#define MAX_CREDENTIALS_LEN 10      // Máximo 10 caracteres según aclaración del profesor
 #define MIN_FILENAME_LEN 4
 #define MAX_FILENAME_LEN 10
 
 // Timeouts y reintentos
-#define TIMEOUT_MS 1000             // 1 segundo
+// CORREGIDO: 3 segundos según aclaración del profesor (para contemplar RTT lunar de 2.56s)
+#define TIMEOUT_MS 3000             // 3 segundos
 #define MAX_RETRIES 5
 
 // Tipos de PDU
@@ -143,6 +146,11 @@ int recv_pdu_with_timeout(int sockfd, PDU *pdu, struct sockaddr_in *src_addr,
  * Valida que el filename tenga entre 4 y 10 caracteres ASCII
  */
 int validate_filename(const char *filename);
+
+/**
+ * Valida que las credenciales sean válidas (máx 10 caracteres ASCII)
+ */
+int validate_credentials(const char *credentials);
 
 /**
  * Obtiene el tamaño de un archivo

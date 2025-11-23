@@ -91,6 +91,7 @@ int send_ack(ServerState *state, struct sockaddr_in *client_addr,
 
 /**
  * Handler para HELLO (Fase 1: Autenticación)
+ * CORREGIDO: Validar longitud máxima de credenciales (10 chars) y solo ASCII
  */
 void handle_hello(ServerState *state, ClientSession *session, 
                   PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
@@ -104,18 +105,36 @@ void handle_hello(ServerState *state, ClientSession *session,
         return;
     }
     
-    // Verificar credenciales
+    // CORREGIDO: Validar longitud máxima (10 caracteres según aclaración del profesor)
+    if (data_len > MAX_CREDENTIALS_LEN) {
+        printf("[ERROR] Credenciales muy largas (%d caracteres, max %d)\n", 
+               data_len, MAX_CREDENTIALS_LEN);
+        send_ack(state, client_addr, 0, "Credencial invalida (max 10 chars)");
+        return;
+    }
+    
+    // CORREGIDO: Validar que solo tenga caracteres ASCII imprimibles
+    for (int i = 0; i < data_len; i++) {
+        if (pdu->data[i] < 32 || pdu->data[i] > 126) {
+            printf("[ERROR] Credenciales con caracteres no-ASCII\n");
+            send_ack(state, client_addr, 0, "Credencial invalida (solo ASCII)");
+            return;
+        }
+    }
+    
+    // Extraer credenciales
     char credentials[MAX_CREDENTIALS_SIZE];
     memset(credentials, 0, sizeof(credentials));
     memcpy(credentials, pdu->data, data_len);
     
+    // Verificar credenciales
     if (strcmp(credentials, state->credentials) != 0) {
         printf("[ERROR] Credenciales invalidas: '%s'\n", credentials);
         send_ack(state, client_addr, 0, "Credenciales invalidas");
         return;
     }
     
-    printf("[OK] Credenciales validas\n");
+    printf("[OK] Credenciales validas: '%s'\n", credentials);
     
     // Actualizar estado
     session->phase = PHASE_AUTHENTICATED;
@@ -159,6 +178,13 @@ void handle_wrq(ServerState *state, ClientSession *session,
     if (!validate_filename(filename)) {
         send_ack(state, client_addr, 1, "Filename invalido (4-10 caracteres ASCII)");
         return;
+    }
+    
+    // Crear directorio test_files si no existe
+    static int dir_created = 0;
+    if (!dir_created) {
+        system("mkdir -p test_files");
+        dir_created = 1;
     }
     
     // Crear path completo para el archivo
@@ -235,6 +261,7 @@ void handle_data(ServerState *state, ClientSession *session,
 
 /**
  * Handler para FIN (Fase 4: Finalización)
+ * CORREGIDO: Según aclaración del profesor, NO validar filename (payload está vacío)
  */
 void handle_fin(ServerState *state, ClientSession *session, 
                 PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
@@ -248,20 +275,13 @@ void handle_fin(ServerState *state, ClientSession *session,
         return;
     }
     
-    // Extraer filename
-    char filename[MAX_FILENAME_LEN + 1];
-    memset(filename, 0, sizeof(filename));
-    memcpy(filename, pdu->data, data_len);
-    
-    // Verificar que coincida con el filename de la sesión
-    if (strcmp(filename, session->filename) != 0) {
-        printf("[ERROR] Filename no coincide (esperado='%s', recibido='%s')\n",
-               session->filename, filename);
-        send_ack(state, client_addr, pdu->seq_num, "Filename no coincide");
-        return;
+    // CORREGIDO: Según aclaración del profesor, el payload debe estar vacío
+    // NO validar filename, solo verificar que el payload esté vacío o ignorarlo
+    if (data_len > 0) {
+        printf("[WARNING] FIN con payload no vacío (%d bytes), ignorando payload\n", data_len);
     }
     
-    printf("[OK] Transferencia completada: %s\n", filename);
+    printf("[OK] Transferencia completada para archivo: %s\n", session->filename);
     
     // Cerrar archivo
     if (session->file) {
@@ -273,7 +293,7 @@ void handle_fin(ServerState *state, ClientSession *session,
     session->phase = PHASE_COMPLETED;
     session->last_activity = time(NULL);
     
-    // Enviar ACK final
+    // Enviar ACK final con el seq_num de la PDU FIN recibida
     send_ack(state, client_addr, pdu->seq_num, NULL);
     printf("  TX: ACK seq=%d\n", pdu->seq_num);
     
@@ -337,6 +357,12 @@ void handle_message(ServerState *state, PDU *pdu, struct sockaddr_in *client_add
  * Inicializa el servidor
  */
 int init_server(ServerState *state, const char *credentials) {
+    // Validar credenciales del servidor
+    if (!validate_credentials(credentials)) {
+        printf("[ERROR] Credenciales del servidor invalidas\n");
+        return -1;
+    }
+    
     // Copiar credenciales
     strncpy(state->credentials, credentials, MAX_CREDENTIALS_SIZE - 1);
     
@@ -382,14 +408,13 @@ int init_server(ServerState *state, const char *credentials) {
 int main(int argc, char *argv[]) {
     ServerState state;
     
-    // Verificar argumentos
-    if (argc != 2) {
-        printf("Uso: %s <credentials>\n", argv[0]);
-        printf("Ejemplo: %s mi_credencial\n", argv[0]);
-        return 1;
-    }
+    // Credencial hardcodeada para tests
+    const char *credentials = "TEST";
     
-    const char *credentials = argv[1];
+    // Si se pasa argumento, usarlo (para pruebas con g14-978e)
+    if (argc == 2) {
+        credentials = argv[1];
+    }
     
     // Inicializar servidor
     if (init_server(&state, credentials) < 0) {

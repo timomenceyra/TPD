@@ -170,6 +170,42 @@ int validate_filename(const char *filename) {
 }
 
 /**
+ * Valida que las credenciales sean válidas (máx 10 caracteres ASCII)
+ * Según aclaración del profesor: máximo 10 caracteres ASCII
+ */
+int validate_credentials(const char *credentials) {
+    if (!credentials) {
+        printf("Error: credenciales nulas\n");
+        return 0;
+    }
+    
+    int len = strlen(credentials);
+    
+    // Verificar longitud máxima (según aclaración del profesor)
+    if (len > MAX_CREDENTIALS_LEN) {
+        printf("Error: credenciales muy largas (max %d caracteres, tiene %d)\n",
+               MAX_CREDENTIALS_LEN, len);
+        return 0;
+    }
+    
+    // Verificar longitud mínima
+    if (len == 0) {
+        printf("Error: credenciales vacías\n");
+        return 0;
+    }
+    
+    // Verificar que solo tenga caracteres ASCII imprimibles
+    for (int i = 0; i < len; i++) {
+        if (credentials[i] < 32 || credentials[i] > 126) {
+            printf("Error: credenciales contienen caracteres no-ASCII\n");
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+/**
  * Obtiene el tamaño de un archivo
  */
 long get_file_size(const char *filepath) {
