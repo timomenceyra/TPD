@@ -1,0 +1,4 @@
+Tiempos de respuesta:
+LAN: 0.167627074
+Latencia internacional 90ms: 3.337009967
+Latencia Lunar 1280ms:44.047221806
