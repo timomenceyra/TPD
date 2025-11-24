@@ -1,5 +1,4 @@
-# Makefile para TP D - UDP Stop & Wait File Transfer
-# Grupo 14
+# Makefile 
 
 # Compilador y flags
 CC = gcc

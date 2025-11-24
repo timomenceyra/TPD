@@ -1,10 +1,8 @@
 #include "../include/protocol.h"
 
-/* ==================== FUNCIONES DE UTILIDAD ==================== */
+// Funciones de utilidad
 
-/**
- * Convierte el tipo de PDU a string para logging
- */
+// Convierte el tipo de PDU a string para logging
 const char* pdu_type_to_string(uint8_t type) {
     switch(type) {
         case TYPE_HELLO: return "HELLO";
@@ -16,9 +14,7 @@ const char* pdu_type_to_string(uint8_t type) {
     }
 }
 
-/**
- * Convierte la fase a string para logging
- */
+// Convierte la fase del protocolo a string para logging
 const char* phase_to_string(int phase) {
     switch(phase) {
         case PHASE_NONE:          return "NONE";
@@ -30,9 +26,7 @@ const char* phase_to_string(int phase) {
     }
 }
 
-/**
- * Imprime una PDU (para debugging)
- */
+// Imprime el contenido de una PDU para logging
 void print_pdu(PDU *pdu, int data_len, const char *prefix) {
     printf("%s PDU [Type=%s(%d), SeqNum=%d, DataLen=%d]\n",
            prefix,
@@ -42,18 +36,14 @@ void print_pdu(PDU *pdu, int data_len, const char *prefix) {
            data_len);
 }
 
-/**
- * Imprime dirección IP:Puerto
- */
+// Imprime una dirección IP:port
 void print_address(struct sockaddr_in *addr) {
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
     printf("%s:%d", ip, ntohs(addr->sin_port));
 }
 
-/**
- * Crea y configura un socket UDP
- */
+// Crea un socket UDP
 int create_udp_socket(void) {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
@@ -63,9 +53,7 @@ int create_udp_socket(void) {
     return sockfd;
 }
 
-/**
- * Construye una PDU con los parámetros dados
- */
+// Construye una PDU
 void build_pdu(PDU *pdu, uint8_t type, uint8_t seq_num, 
                const void *data, int data_len) {
     memset(pdu, 0, sizeof(PDU));
@@ -80,10 +68,7 @@ void build_pdu(PDU *pdu, uint8_t type, uint8_t seq_num,
     }
 }
 
-/**
- * Envía una PDU por UDP
- * Retorna: número de bytes enviados, o -1 en error
- */
+// Envía una PDU por UDP
 int send_pdu(int sockfd, struct sockaddr_in *dest_addr, 
              PDU *pdu, int data_len) {
     // Calcular tamaño total: type(1) + seq_num(1) + data
@@ -100,10 +85,8 @@ int send_pdu(int sockfd, struct sockaddr_in *dest_addr,
     return sent;
 }
 
-/**
- * Recibe una PDU con timeout usando select()
- * Retorna: número de bytes recibidos, 0 si timeout, -1 si error
- */
+// Recibe una PDU con timeout usando select()
+// Retorna: número de bytes recibidos, 0 si timeout, -1 si error
 int recv_pdu_with_timeout(int sockfd, PDU *pdu, struct sockaddr_in *src_addr,
                           int timeout_ms) {
     fd_set readfds;
@@ -143,9 +126,7 @@ int recv_pdu_with_timeout(int sockfd, PDU *pdu, struct sockaddr_in *src_addr,
     return recv_len;
 }
 
-/**
- * Valida que el filename tenga entre 4 y 10 caracteres ASCII
- */
+// Valida que el filename tenga entre 4 y 10 caracteres ASCII
 int validate_filename(const char *filename) {
     if (!filename) return 0;
     
@@ -169,10 +150,7 @@ int validate_filename(const char *filename) {
     return 1;
 }
 
-/**
- * Valida que las credenciales sean válidas (máx 10 caracteres ASCII)
- * Según aclaración del profesor: máximo 10 caracteres ASCII
- */
+// Valida las credenciales (misma lógica que en el servidor)
 int validate_credentials(const char *credentials) {
     if (!credentials) {
         printf("Error: credenciales nulas\n");
@@ -181,7 +159,7 @@ int validate_credentials(const char *credentials) {
     
     int len = strlen(credentials);
     
-    // Verificar longitud máxima (según aclaración del profesor)
+    // Verificar longitud máxima 
     if (len > MAX_CREDENTIALS_LEN) {
         printf("Error: credenciales muy largas (max %d caracteres, tiene %d)\n",
                MAX_CREDENTIALS_LEN, len);
@@ -205,9 +183,7 @@ int validate_credentials(const char *credentials) {
     return 1;
 }
 
-/**
- * Obtiene el tamaño de un archivo
- */
+// Obtiene el tamaño de un archivo
 long get_file_size(const char *filepath) {
     FILE *file = fopen(filepath, "rb");
     if (!file) {

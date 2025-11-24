@@ -1,20 +1,17 @@
 #include "../include/protocol.h"
 
-/* ==================== FUNCIONES DEL SERVIDOR ==================== */
+// Funciones del servidor UDP
 
-/**
- * Compara dos direcciones sockaddr_in
- * Retorna 1 si son iguales, 0 si no
- */
+// Compara dos direcciones sockaddr_in
+// Retorna 1 si son iguales, 0 si no
 int addr_equal(struct sockaddr_in *addr1, struct sockaddr_in *addr2) {
     return (addr1->sin_addr.s_addr == addr2->sin_addr.s_addr &&
             addr1->sin_port == addr2->sin_port);
 }
 
-/**
- * Busca una sesión de cliente existente por su dirección
- * Retorna: puntero a la sesión o NULL si no existe
- */
+
+// Busca una sesión de cliente existente por su dirección
+// Retorna: puntero a la sesión o NULL si no existe
 ClientSession* find_session(ServerState *state, struct sockaddr_in *client_addr) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (state->clients[i].active && 
@@ -25,10 +22,8 @@ ClientSession* find_session(ServerState *state, struct sockaddr_in *client_addr)
     return NULL;
 }
 
-/**
- * Crea una nueva sesión de cliente
- * Retorna: puntero a la nueva sesión o NULL si no hay espacio
- */
+// Crea una nueva sesión de cliente
+// Retorna: puntero a la nueva sesión o NULL si no hay slots disponibles
 ClientSession* create_session(ServerState *state, struct sockaddr_in *client_addr) {
     // Buscar slot libre
     for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -54,9 +49,7 @@ ClientSession* create_session(ServerState *state, struct sockaddr_in *client_add
     return NULL;
 }
 
-/**
- * Libera una sesión de cliente
- */
+// Libera una sesión de cliente
 void free_session(ClientSession *session) {
     if (session->file) {
         fclose(session->file);
@@ -71,9 +64,7 @@ void free_session(ClientSession *session) {
     session->phase = PHASE_NONE;
 }
 
-/**
- * Envía un ACK al cliente
- */
+// Envía un ACK al cliente, opcionalmente con mensaje de error
 int send_ack(ServerState *state, struct sockaddr_in *client_addr, 
              uint8_t seq_num, const char *error_msg) {
     PDU ack;
@@ -89,10 +80,7 @@ int send_ack(ServerState *state, struct sockaddr_in *client_addr,
     return send_pdu(state->sockfd, client_addr, &ack, data_len);
 }
 
-/**
- * Handler para HELLO (Fase 1: Autenticación)
- * CORREGIDO: Validar longitud máxima de credenciales (10 chars) y solo ASCII
- */
+// Handler para HELLO (Fase 1: Autenticación)
 void handle_hello(ServerState *state, ClientSession *session, 
                   PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
     printf("[HELLO] Cliente ");
@@ -105,7 +93,7 @@ void handle_hello(ServerState *state, ClientSession *session,
         return;
     }
     
-    // CORREGIDO: Validar longitud máxima (10 caracteres según aclaración del profesor)
+    // Validar longitud máxima 
     if (data_len > MAX_CREDENTIALS_LEN) {
         printf("[ERROR] Credenciales muy largas (%d caracteres, max %d)\n", 
                data_len, MAX_CREDENTIALS_LEN);
@@ -113,7 +101,7 @@ void handle_hello(ServerState *state, ClientSession *session,
         return;
     }
     
-    // CORREGIDO: Validar que solo tenga caracteres ASCII imprimibles
+    // Validar que solo tenga caracteres ASCII imprimibles
     for (int i = 0; i < data_len; i++) {
         if (pdu->data[i] < 32 || pdu->data[i] > 126) {
             printf("[ERROR] Credenciales con caracteres no-ASCII\n");
@@ -146,9 +134,7 @@ void handle_hello(ServerState *state, ClientSession *session,
     printf("  TX: ACK seq=0\n");
 }
 
-/**
- * Handler para WRQ (Fase 2: Write Request)
- */
+// Handler para WRQ (Fase 2: Parametrización)
 void handle_wrq(ServerState *state, ClientSession *session, 
                 PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
     printf("[WRQ] Cliente ");
@@ -212,9 +198,7 @@ void handle_wrq(ServerState *state, ClientSession *session,
     printf("  TX: ACK seq=1\n");
 }
 
-/**
- * Handler para DATA (Fase 3: Transferencia)
- */
+// Handler para DATA (Fase 3: Transferencia de Datos)
 void handle_data(ServerState *state, ClientSession *session, 
                  PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
     
@@ -259,10 +243,7 @@ void handle_data(ServerState *state, ClientSession *session,
     session->expected_seq = 1 - session->expected_seq;
 }
 
-/**
- * Handler para FIN (Fase 4: Finalización)
- * CORREGIDO: Según aclaración del profesor, NO validar filename (payload está vacío)
- */
+// Handler para FIN (Fase 4: Finalización)
 void handle_fin(ServerState *state, ClientSession *session, 
                 PDU *pdu, struct sockaddr_in *client_addr, int data_len) {
     printf("[FIN] Cliente ");
@@ -275,8 +256,6 @@ void handle_fin(ServerState *state, ClientSession *session,
         return;
     }
     
-    // CORREGIDO: Según aclaración del profesor, el payload debe estar vacío
-    // NO validar filename, solo verificar que el payload esté vacío o ignorarlo
     if (data_len > 0) {
         printf("[WARNING] FIN con payload no vacío (%d bytes), ignorando payload\n", data_len);
     }
@@ -301,12 +280,10 @@ void handle_fin(ServerState *state, ClientSession *session,
     free_session(session);
 }
 
-/**
- * Procesa un mensaje recibido
- */
+// Procesa un mensaje recibido
 void handle_message(ServerState *state, PDU *pdu, struct sockaddr_in *client_addr, 
                    int recv_len) {
-    // Calcular tamaño de datos (recv_len - 2 bytes de header)
+    // Calcular tamaño de datos 
     int data_len = recv_len - 2;
     
     printf("\n----------------------------------------\n");
@@ -353,9 +330,7 @@ void handle_message(ServerState *state, PDU *pdu, struct sockaddr_in *client_add
     }
 }
 
-/**
- * Inicializa el servidor
- */
+// Inicializa el estado del servidor
 int init_server(ServerState *state, const char *credentials) {
     // Validar credenciales del servidor
     if (!validate_credentials(credentials)) {
@@ -402,16 +377,14 @@ int init_server(ServerState *state, const char *credentials) {
     return 0;
 }
 
-/**
- * Función principal del servidor
- */
+// Programa principal del servidor UDP
 int main(int argc, char *argv[]) {
     ServerState state;
     
     // Credencial hardcodeada para tests
     const char *credentials = "TEST";
     
-    // Si se pasa argumento, usarlo (para pruebas con g14-978e)
+    // Si se pasa argumento, usarlo 
     if (argc == 2) {
         credentials = argv[1];
     }

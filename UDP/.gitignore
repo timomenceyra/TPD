@@ -1,0 +1,14 @@
+# Ejecutables
+bin/client
+bin/server
+
+# Archivos objeto
+*.o
+
+# Archivos recibidos
+test_files/*.received
+
+# Archivos temporales
+*.tmp
+*.log
+```

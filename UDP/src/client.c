@@ -1,10 +1,8 @@
 #include "../include/protocol.h"
 
-/* ==================== FUNCIONES DEL CLIENTE ==================== */
+// Funciones del cliente UDP
 
-/**
- * Inicializa el estado del cliente
- */
+// Inicializa el estado del cliente
 int init_client(ClientState *state, const char *server_ip, 
                 const char *credentials, const char *filename) {
     // Validar credenciales ANTES de inicializar
@@ -50,9 +48,7 @@ int init_client(ClientState *state, const char *server_ip,
     return 0;
 }
 
-/**
- * FASE 1: Autenticación (HELLO)
- */
+// FASE 1: Autenticación (HELLO)
 int send_hello(ClientState *state) {
     PDU pdu, ack;
     int retries = 0;
@@ -109,13 +105,11 @@ int send_hello(ClientState *state) {
     return -1;
 }
 
-/**
- * FASE 2: Parametrización (WRITE REQUEST)
- */
+// FASE 2: Parametrización (WRQ)
 int send_wrq(ClientState *state) {
     PDU pdu, ack;
     int retries = 0;
-    int filename_len = strlen(state->filename) + 1; // +1 por null terminator
+    int filename_len = strlen(state->filename) + 1; 
     
     printf("\n=== FASE 2: PARAMETRIZACION (WRQ) ===\n");
     
@@ -172,9 +166,7 @@ int send_wrq(ClientState *state) {
     return -1;
 }
 
-/**
- * FASE 3: Transferencia de datos (DATA)
- */
+// FASE 3: Transferencia de Datos (DATA)
 int send_file_data(ClientState *state, const char *filepath) {
     FILE *file;
     PDU pdu, ack;
@@ -273,18 +265,14 @@ int send_file_data(ClientState *state, const char *filepath) {
     return 0;
 }
 
-/**
- * FASE 4: Finalización (FIN)
- * CORREGIDO: Según aclaración del profesor, el payload debe estar VACÍO
- */
+// FASE 4: Finalización (FIN)
 int send_fin(ClientState *state) {
     PDU pdu, ack;
     int retries = 0;
     
     printf("\n=== FASE 4: FINALIZACION (FIN) ===\n");
     
-    // CORREGIDO: Construir FIN PDU con payload VACÍO (no filename)
-    // Según aclaración del profesor: "En la fase 4 de Finalización, el payload es vacío"
+    // Construir FIN PDU con el seq_num actual
     build_pdu(&pdu, TYPE_FIN, state->current_seq, NULL, 0);
     
     while (retries < MAX_RETRIES) {
@@ -325,9 +313,7 @@ int send_fin(ClientState *state) {
     return -1;
 }
 
-/**
- * Función principal del cliente
- */
+// Programa principal del cliente UDP
 int main(int argc, char *argv[]) {
     ClientState state;
     
@@ -340,14 +326,14 @@ int main(int argc, char *argv[]) {
     
     const char *server_ip = argv[1];
     const char *credentials = argv[2];
-    const char *filepath = argv[3];    // CAMBIADO: ahora filepath va primero
-    const char *filename = argv[4];    // CAMBIADO: filename va último
+    const char *filepath = argv[3];   
+    const char *filename = argv[4];    
     
     printf("========================================\n");
     printf("  CLIENTE UDP FILE TRANSFER\n");
     printf("========================================\n");
     
-    // Inicializar cliente (ya valida credenciales y filename)
+    // Inicializar cliente
     if (init_client(&state, server_ip, credentials, filename) < 0) {
         return 1;
     }

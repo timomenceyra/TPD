@@ -1,0 +1,58 @@
+# Protocolo UDP Stop & Wait
+
+## Compilación
+
+Para compilar el proyecto:
+```bash
+make clean
+make
+```
+
+Esto genera los ejecutables `bin/client` y `bin/server`.
+
+## Uso
+
+### Servidor
+
+El servidor escucha en el puerto 20252 y requiere credenciales para autenticar clientes:
+```bash
+./bin/server <credenciales>
+```
+
+**Ejemplo:**
+```bash
+./bin/server g14-978e
+```
+
+### Cliente
+
+El cliente se conecta al servidor, se autentica y transfiere un archivo:
+```bash
+./bin/client <ip_servidor> <credenciales> <ruta_archivo_local> <nombre_archivo_remoto>
+```
+
+**Ejemplo (local):**
+```bash
+./bin/client 127.0.0.1 g14-978e ./test_files/archivo.txt archivo.txt
+```
+
+**Ejemplo (servidor de la cátedra):**
+```bash
+./bin/client 167.114.129.206 g14-978e ./test_files/g14.data g14.data
+```
+
+## Archivos recibidos
+
+Los archivos transferidos se guardan en `test_files/` con extensión `.received`:
+- Cliente solicita: `archivo.txt`
+- Servidor guarda: `test_files/archivo.received`
+
+## Verificación de transferencia
+
+Para verificar que el archivo se transfirió correctamente:
+```bash
+md5sum test_files/archivo_original.txt
+md5sum test_files/archivo.received
+```
+
+Los MD5 deben coincidir.
