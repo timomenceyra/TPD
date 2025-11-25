@@ -1,6 +1,6 @@
 Este módulo implementa el Cliente y Servidor TCP utilizados para medir el one-way delay de PDUs enviadas desde el cliente hacia el servidor, respetando el formato solicitado por la cátedra.
 
-🛠️ Compilación
+Compilación
 
 El proyecto se compila desde la carpeta TCP usando:
 
@@ -15,7 +15,7 @@ Esto genera dos binarios:
 
 ---
 
-🚀 Ejecución
+Ejecución
 
 Servidor
 
@@ -67,7 +67,7 @@ que corre el cliente con `-d 50 -N 3` como valores por defecto.
 
 ---
 
-🧹 Limpiar el directorio
+Limpiar el directorio
 
 Para borrar los binarios y el CSV generado:
 

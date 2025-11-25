@@ -35,6 +35,7 @@ El cliente se conecta al servidor, se autentica y transfiere un archivo:
 ```bash
 ./bin/client 127.0.0.1 g14-978e ./test_files/archivo.txt archivo.txt
 ```
+Para probarlo localmente, reemplazar archivo.txt por g14.data.
 
 **Ejemplo (servidor de la cátedra):**
 ```bash
