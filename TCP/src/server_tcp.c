@@ -73,26 +73,10 @@ void handle_client(int client_sock, FILE *fp) {
             break;
         }
 
-        // ESTA OPCIÓN DESCARTA LO QUE YA ESTABA EN EL BUFFER
         if (assembly_len + (size_t)n > sizeof(assembly_buf)) {
             fprintf(stderr, "Overflow en el buffer de ensamblado. Se descarta la información que estaba.\n");
             assembly_len = 0;
         }
-
-        // ESTA OPCIÓN DESCARTA LA INFO NUEVA QUE LLEGA
-        // if (assembly_len + (size_t)n > sizeof(assembly_buf)) {
-        //     fprintf(stderr, "Overflow en el buffer de ensamblado. Se descarta la información nueva.\n");
-        //     continue;
-        // }
-
-        // ESTA OPCIÓN CIERRA EL CLIENTE ANTES OVERFLOW EN EL BUFFER DE ENSAMBLADO
-        // if (assembly_len + (size_t)n > sizeof(assembly_buf)) {
-        //     fprintf(stderr, "Overflow en el buffer de ensamblado. Cerrando la conexión.\n");
-        //     close(client_sock);
-        //     return;
-        // }
-
-        // HAY QUE REVISAR QUE OPCIÓN PREFERIMOS HACER
 
         memcpy(assembly_buf + assembly_len, recv_buf, (size_t)n);
         assembly_len += (size_t)n;

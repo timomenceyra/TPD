@@ -1,62 +1,78 @@
-# README – Cliente/Servidor TCP para medición de One-Way Delay
+Este módulo implementa el Cliente y Servidor TCP utilizados para medir el one-way delay de PDUs enviadas desde el cliente hacia el servidor, respetando el formato solicitado por la cátedra.
 
-Este proyecto implementa la parte **TCP** del TP de Redes y Comunicación.  
-Consta de dos programas en C:
+🛠️ Compilación
 
-- **client_tcp.c** → envía PDUs con timestamp.  
-- **server_tcp.c** → recibe PDUs, calcula one-way delay y guarda resultados en CSV.
-
-## 1. Compilación
+El proyecto se compila desde la carpeta TCP usando:
 
 ```bash
-gcc server_tcp.c -o server_tcp
-gcc client_tcp.c -o client_tcp
+make
 ```
 
-## 2. Ejecución
+Esto genera dos binarios:
 
-### Servidor
+- `client_tcp`
+- `server_tcp`
+
+---
+
+🚀 Ejecución
+
+Servidor
+
+```bash
+make run-server
+```
+
+o directamente:
 
 ```bash
 ./server_tcp
 ```
 
-### Cliente
+El servidor escucha en el puerto indicado en `server_tcp.c` (20252), recibe PDUs, detecta framing usando el delimitador '|', valida tamaños y calcula el delay real:
+delay = arrival_timestamp - origin_timestamp
 
-Modificar la IP en el código:
+Los resultados se guardan en `tcp_delays.csv`.
 
-```c
-inet_pton(AF_INET, "AQUI_IP_SERVIDOR", &server_addr.sin_addr);
-```
+---
 
-Ejecutar:
+Cliente
+
+El cliente envía PDUs con un timestamp de 8 bytes, un payload de entre 500 y 1000 bytes, y un delimitador `'|'`.
+
+La interfaz es:
 
 ```bash
-./client_tcp -d 50 -N 10
+./client_tcp -d <ms> -N <segundos>
 ```
 
-## 3. Resultado
+- `-d <ms>` → intervalo entre envíos (milisegundos)
+- `-N <seg>` → duración total del envío (segundos)
 
-El archivo generado en el servidor:
+Ejemplo:
 
+```bash
+./client_tcp -d 50 -N 3
 ```
-tcp_delays.csv
+
+Esto envía una PDU cada 50 ms durante 3 segundos (aprox. 60 PDUs).
+
+También podés usar:
+
+```bash
+make run-client
 ```
 
-## 4. Configuración de VMs
+que corre el cliente con `-d 50 -N 3` como valores por defecto.
 
-- Host-Only
-- NAT + Port Forwarding
-- Bridged + WANem
+---
 
-## 5. Pruebas WANem / NetEm
+🧹 Limpiar el directorio
 
-- Pérdidas: 1%, 2%, 5%
-- Jitter: delay 50 ms, jitter 40 ms
+Para borrar los binarios y el CSV generado:
 
-## 6. Análisis
+```bash
+make clean
+```
 
-Graficar:
-- X: número de medición
-- Y: delay (s)
-
+---

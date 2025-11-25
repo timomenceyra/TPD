@@ -79,13 +79,6 @@ int main(int argc, char *argv[]) {
     uint64_t start = get_timestamp_usec();
     uint64_t now = start;
 
-    // int payload_len = (rand() % (MAX_PAYLOAD - MIN_PAYLOAD + 1)) + MIN_PAYLOAD;
-    // size_t pdu_len = 8 + payload_len + 1;
-
-    // uint8_t *pdu = malloc(pdu_len);
-    // memset(pdu + 8, 0x20, payload_len);
-    // pdu[8 + payload_len] = '|';
-
     while (now - start < (uint64_t)N_secs * 1000000ULL) {
 
         size_t payload_len = (rand() % 501) + 500;
@@ -95,9 +88,6 @@ int main(int argc, char *argv[]) {
         memcpy(pdu, &ts, 8);
         memset(pdu + 8, 0x20, payload_len);
         pdu[8 + payload_len] = '|';
-
-        // uint64_t ts = get_timestamp_usec();
-        // memcpy(pdu, &ts, 8);
 
         if (send_all(sock, pdu, pdu_len) < 0) {
             perror("send_all");
@@ -111,7 +101,6 @@ int main(int argc, char *argv[]) {
         now = get_timestamp_usec();
     }
 
-    // free(pdu);
     close(sock);
 
     printf("Cliente terminado.\n");
